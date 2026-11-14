@@ -61,6 +61,25 @@
   <!-- List of the sources behind the non-yellow cells -->
   <ul id="cropSources" class="note"></ul>
 
+  <!-- How well each crop's water need matches this farm's NASA rain and soil wetness -->
+  <h2>Crop fit at this farm</h2>
+  <table id="fitTable"></table>
+
+  <!-- Farmer priorities: each slider weights one goal from 0 (ignore) to 10 (most important) -->
+  <h2>Your priorities</h2>
+  <div class="row" id="sliders">
+    <label>Soil health <output id="w_soil_out">5</output><br><input id="w_soil" type="range" min="0" max="10" value="5"></label>
+    <label>Erosion control <output id="w_erosion_out">5</output><br><input id="w_erosion" type="range" min="0" max="10" value="5"></label>
+    <label>Income <output id="w_income_out">5</output><br><input id="w_income" type="range" min="0" max="10" value="5"></label>
+    <label>Low water risk <output id="w_water_out">5</output><br><input id="w_water" type="range" min="0" max="10" value="5"></label>
+  </div>
+
+  <!-- The three best rotation plans, redrawn whenever a slider moves -->
+  <h2>Top 3 rotation plans</h2>
+  <ol id="plans"></ol>
+  <!-- Honest list of the model's simplifications so judges can weigh the result -->
+  <p class="note">Model assumptions: one main crop per year in the rainy season; each crop is sown in the allowed month with the best water fit; water fit compares NASA POWER rain over the crop's season with its water need, and adds root-zone wetness; small bonuses go to plans that start with high ground cover (bare slope after coffee removal) and end with a nitrogen-fixing crop (before coffee is replanted). These rules are the team's own simplification, not a published method.</p>
+
   <script>
     // ---------- 1. CONSTANTS ----------
 
@@ -75,6 +94,11 @@
     const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     // Keep the chart object so we can destroy it before drawing a new one
     let chart = null;
+    // Latest climate and crop data; plans are ranked only when both have loaded
+    let climate = null;
+    let cropData = null;
+    // Average days per month, used to turn POWER's mm/day into mm per month
+    const DAYS = [31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
     // ---------- 2. FETCH DATA FROM NASA POWER ----------
 
@@ -195,6 +219,9 @@
         // Draw the chart and the table
         drawChart(rain, temp, rainUnit, tempUnit);
         drawTable(rain, temp, soil, rainUnit, tempUnit);
+        // Keep the climate for the crop scoring, then re-rank the plans for this location
+        climate = { rain, soil };
+        updatePlans();
         // Done: show which years were averaged (honest about the data)
         status.textContent = `Monthly averages ${START_YEAR}–${END_YEAR}, NASA POWER (AG community).`;
       } catch (err) {
@@ -252,12 +279,184 @@
         .map(([id, s]) => `<li>${id}: <a href="${s.url}" target="_blank" rel="noopener">${s.title}</a></li>`).join("");
     }
 
+    // ---------- 8. SCORE EACH CROP AGAINST THE NASA CLIMATE ----------
+
+    // Keeps a number between 0 and 1 so every score is on the same scale
+    const clamp = v => Math.min(1, Math.max(0, v));
+
+    // Finds the allowed sowing month with the best water fit for one crop
+    function cropFit(crop) {
+      // Season length in whole months, from the middle of the growing-days range
+      const g = crop.growingDays.value;
+      const months = Math.max(1, Math.round((g[0] + g[1]) / 2 / 30));
+      // The crop's water need range in mm per season
+      const [lo, hi] = crop.waterNeedMm.value;
+      let best = null;
+      // Try every allowed sowing month and keep the safest one
+      for (const m of crop.sowingMonths.value) {
+        let rain = 0, wet = 0;
+        // Add up rain (mm) and root-zone wetness over the months the crop is in the field
+        for (let i = 0; i < months; i++) {
+          // Wrap around the year so a September sowing can run into January
+          const idx = (m - 1 + i) % 12;
+          rain += (climate.rain[idx] ?? 0) * DAYS[idx];
+          wet += climate.soil[idx] ?? 0;
+        }
+        wet /= months;
+        // 0 when rain is half the minimum need or less, 1 when rain reaches the maximum need
+        const waterFit = clamp((rain - 0.5 * lo) / (hi - 0.5 * lo));
+        // GWETROOT 0.3 counts as dry and 0.7 as well-watered
+        const wetFit = clamp((wet - 0.3) / 0.4);
+        // Rain matters most; soil wetness shows whether the rain stays in the root zone
+        const safety = 0.7 * waterFit + 0.3 * wetFit;
+        if (!best || safety > best.safety) best = { month: m, months, rain, wet, safety };
+      }
+      return best;
+    }
+
+    // Turns one crop into four 0–1 scores, one per farmer priority
+    function cropScores(crop, fit) {
+      return {
+        // Half for fixing nitrogen, half for adding organic matter
+        soil: (crop.fixesNitrogen.value ? 0.5 : 0) + 0.5 * (crop.organicMatter.value - 1) / 2,
+        // 1–3 scales become 0, 0.5, 1
+        erosion: (crop.erosionCover.value - 1) / 2,
+        income: (crop.incomeLevel.value - 1) / 2,
+        // Water risk is low when the fit is high
+        water: fit.safety
+      };
+    }
+
+    // Shows the fit numbers so the farmer can see why a crop scores high or low
+    function drawFitTable(fits) {
+      let html = "<tr><th>Crop</th><th>Best sowing month</th><th>Season (months)</th><th>NASA rain in season (mm)</th><th>Water need (mm)</th><th>Root-zone wetness</th><th>Water fit</th></tr>";
+      for (const c of cropData.crops) {
+        const f = fits[c.id];
+        html += `<tr><th>${c.name}</th><td>${MONTHS[f.month - 1]}</td><td>${f.months}</td><td>${Math.round(f.rain)}</td>`
+          + `<td>${c.waterNeedMm.value.join("–")}</td><td>${Math.round(f.wet * 100)}%</td><td>${Math.round(f.safety * 100)}%</td></tr>`;
+      }
+      document.getElementById("fitTable").innerHTML = html;
+    }
+
+    // ---------- 9. BUILD AND RANK 2–3 YEAR SEQUENCES ----------
+
+    // Every 2- and 3-year order of crops, never the same crop two years in a row
+    function buildSequences(ids) {
+      const out = [];
+      // Grows a sequence one year at a time and saves it at length 2 and 3
+      const grow = seq => {
+        if (seq.length >= 2) out.push(seq);
+        if (seq.length === 3) return;
+        for (const id of ids) if (id !== seq[seq.length - 1]) grow([...seq, id]);
+      };
+      grow([]);
+      return out;
+    }
+
+    // The four priorities, in slider order, with the words used in the reasons
+    const CRITERIA = [
+      { key: "soil", label: "soil health" },
+      { key: "erosion", label: "erosion control" },
+      { key: "income", label: "income" },
+      { key: "water", label: "low water risk" }
+    ];
+
+    // Scores every sequence with the slider weights and returns them best first
+    function rankSequences(byId, weights) {
+      // If every slider is 0, treat all priorities as equal instead of dividing by 0
+      const sumW = Object.values(weights).reduce((s, w) => s + w, 0) || 4;
+      const w = k => (sumW === 4 && !Object.values(weights).some(Boolean) ? 1 : weights[k]);
+      const ranked = buildSequences(Object.keys(byId)).map(seq => {
+        // Average each priority over the years of the plan
+        const avg = {};
+        for (const { key } of CRITERIA) avg[key] = seq.reduce((s, id) => s + byId[id].scores[key], 0) / seq.length;
+        // Weighted average of the four priorities
+        let total = CRITERIA.reduce((s, { key }) => s + w(key) * avg[key], 0) / sumW;
+        // Bonus: high ground cover first, because the slope is bare after the coffee is removed
+        const startsCovered = byId[seq[0]].crop.erosionCover.value === 3;
+        // Bonus: a nitrogen-fixing crop last, so the soil is richer when coffee goes back in
+        const endsWithN = byId[seq[seq.length - 1]].crop.fixesNitrogen.value;
+        total += (startsCovered ? 0.03 : 0) + (endsWithN ? 0.03 : 0);
+        return { seq, avg, total, startsCovered, endsWithN };
+      }).sort((a, b) => b.total - a.total);
+      // Keep only the best plan for each set of crops, so the top 3 are really different plans
+      const seen = new Set();
+      return ranked.filter(r => {
+        const key = [...new Set(r.seq)].sort().join("+");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    // ---------- 10. PLAIN-ENGLISH REASONS ----------
+
+    // Explains one plan: what to sow each year, and why it suits these priorities
+    function explain(plan, byId, weights) {
+      // One line per year with the NASA numbers behind the choice
+      const years = plan.seq.map((id, i) => {
+        const { crop, fit } = byId[id];
+        return `Year ${i + 1}: <b>${crop.name}</b>, sow in ${MONTHS[fit.month - 1]} – about ${Math.round(fit.rain)} mm of rain over its ${fit.months}-month season (needs ${crop.waterNeedMm.value.join("–")} mm).`;
+      });
+      // The two priorities that add the most to this plan's score
+      const ranked = [...CRITERIA].sort((a, b) => weights[b.key] * plan.avg[b.key] - weights[a.key] * plan.avg[a.key]);
+      const crops = plan.seq.map(id => byId[id].crop);
+      const names = list => [...new Set(list.map(c => c.name.split(" (")[0]))].join(" and ");
+      // A short fact for each priority, built from the crop data
+      const facts = {
+        soil: `${names(crops.filter(c => c.fixesNitrogen.value)) || "none of these crops"} fix nitrogen`,
+        erosion: `${names(crops.filter(c => c.erosionCover.value >= 2)) || "none of these crops"} keep the slope covered`,
+        income: `${names(crops.filter(c => c.incomeLevel.value >= 2)) || "none of these crops"} bring cash income`,
+        water: plan.avg.water > 0.8 ? "NASA rain covers each crop's water need" : "some crops may run short of rain in their season"
+      };
+      let why = `Strong on ${ranked[0].label} and ${ranked[1].label}: ${facts[ranked[0].key]}, and ${facts[ranked[1].key]}.`;
+      // Name the weakest priority so the trade-off is clear
+      const weakest = [...CRITERIA].sort((a, b) => plan.avg[a.key] - plan.avg[b.key])[0];
+      why += ` Trade-off: weaker on ${weakest.label}.`;
+      // Explain the order bonuses when they apply
+      if (plan.startsCovered) why += " It starts with dense ground cover while the slope is bare.";
+      if (plan.endsWithN) why += " It ends with a nitrogen-fixing crop before coffee is replanted.";
+      // Warn if the plan leans on unverified numbers
+      const usesTodo = crops.some(c => Object.values(c).some(f => f && f.source === "TODO"));
+      if (usesTodo) why += " <i>Some crop values in this plan are not yet verified (TODO).</i>";
+      return `${years.join("<br>")}<br>${why}`;
+    }
+
+    // ---------- 11. REDRAW EVERYTHING THAT DEPENDS ON CLIMATE + CROPS + SLIDERS ----------
+
+    // Called after data loads and whenever a slider moves
+    function updatePlans() {
+      // Wait until both the NASA climate and the crop table are ready
+      if (!climate || !cropData) return;
+      // Fit and scores per crop, looked up by id
+      const byId = {};
+      for (const crop of cropData.crops) {
+        const fit = cropFit(crop);
+        byId[crop.id] = { crop, fit, scores: cropScores(crop, fit) };
+      }
+      drawFitTable(Object.fromEntries(Object.entries(byId).map(([id, v]) => [id, v.fit])));
+      // Read the four sliders and show their values next to the labels
+      const weights = {};
+      for (const { key } of CRITERIA) {
+        weights[key] = Number(document.getElementById(`w_${key}`).value);
+        document.getElementById(`w_${key}_out`).textContent = weights[key];
+      }
+      // Rank all plans and show the best three with their reasons
+      const top = rankSequences(byId, weights).slice(0, 3);
+      document.getElementById("plans").innerHTML = top
+        .map(p => `<li><p><b>${p.seq.map(id => byId[id].crop.name.split(" (")[0]).join(" → ")}</b> (score ${Math.round(p.total * 100)})<br>${explain(p, byId, weights)}</p></li>`)
+        .join("");
+    }
+
+    // Re-rank live while the farmer drags any slider
+    for (const { key } of CRITERIA) document.getElementById(`w_${key}`).addEventListener("input", updatePlans);
+
     // Connect the button to the function
     document.getElementById("loadBtn").addEventListener("click", onLoadClick);
     // Load once on page open so the demo is never empty
     onLoadClick();
     // Load and draw the crop table once; show the error in the status line if it fails
-    loadCrops().then(drawCropTable).catch(err => {
+    loadCrops().then(d => { cropData = d; drawCropTable(d); updatePlans(); }).catch(err => {
       document.getElementById("status").textContent = `Error: ${err.message}`;
       document.getElementById("status").className = "error";
     });
