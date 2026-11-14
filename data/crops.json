@@ -1,0 +1,75 @@
+{
+  "_about": "Rotation crops for the gap between removing old coffee and replanting. Every agronomic value is an object {value, source}. A source of \"TODO\" means the value is a placeholder that the team must verify before it is trusted. Scales: erosionCover, incomeLevel and organicMatter use 1 = low, 2 = medium, 3 = high.",
+  "sources": {
+    "FAO-IWM3-T6": {
+      "title": "FAO Irrigation Water Management Training Manual No. 3, Table 6: Indicative values of the total growing period",
+      "url": "https://www.fao.org/4/s2022e/s2022e07.htm"
+    },
+    "FAO-IWM3-T14": {
+      "title": "FAO Irrigation Water Management Training Manual No. 3, Table 14: Indicative values of crop water needs and sensitivity to drought",
+      "url": "https://www.fao.org/4/s2022e/s2022e07.htm"
+    }
+  },
+  "crops": [
+    {
+      "id": "maize",
+      "name": "Maize",
+      "waterNeedMm": { "value": [500, 800], "source": "FAO-IWM3-T14" },
+      "growingDays": { "value": [125, 180], "source": "FAO-IWM3-T6" },
+      "droughtSensitivity": { "value": "medium-high", "source": "FAO-IWM3-T14" },
+      "sowingMonths": { "value": [5, 6, 7, 8], "source": "TODO" },
+      "fixesNitrogen": { "value": false, "source": "TODO" },
+      "organicMatter": { "value": 2, "source": "TODO" },
+      "erosionCover": { "value": 1, "source": "TODO" },
+      "incomeLevel": { "value": 2, "source": "TODO" }
+    },
+    {
+      "id": "peanut",
+      "name": "Peanut (groundnut)",
+      "waterNeedMm": { "value": [500, 700], "source": "FAO-IWM3-T14" },
+      "growingDays": { "value": [130, 140], "source": "FAO-IWM3-T6" },
+      "droughtSensitivity": { "value": "low-medium", "source": "FAO-IWM3-T14" },
+      "sowingMonths": { "value": [5, 6, 7, 8], "source": "TODO" },
+      "fixesNitrogen": { "value": true, "source": "TODO" },
+      "organicMatter": { "value": 1, "source": "TODO" },
+      "erosionCover": { "value": 2, "source": "TODO" },
+      "incomeLevel": { "value": 3, "source": "TODO" }
+    },
+    {
+      "id": "soybean",
+      "name": "Soybean",
+      "waterNeedMm": { "value": [450, 700], "source": "FAO-IWM3-T14" },
+      "growingDays": { "value": [135, 150], "source": "FAO-IWM3-T6" },
+      "droughtSensitivity": { "value": "low-medium", "source": "FAO-IWM3-T14" },
+      "sowingMonths": { "value": [5, 6, 7, 8], "source": "TODO" },
+      "fixesNitrogen": { "value": true, "source": "TODO" },
+      "organicMatter": { "value": 2, "source": "TODO" },
+      "erosionCover": { "value": 2, "source": "TODO" },
+      "incomeLevel": { "value": 2, "source": "TODO" }
+    },
+    {
+      "id": "mungbean",
+      "name": "Mung bean",
+      "waterNeedMm": { "value": [300, 500], "source": "TODO", "note": "Proxy only: FAO-IWM3-T14 value for 'Bean (dry)', which is not mung bean." },
+      "growingDays": { "value": [75, 90], "source": "TODO", "note": "Proxy only: FAO-IWM3-T6 value for 'Bean (green)', which is not mung bean." },
+      "droughtSensitivity": { "value": "medium-high", "source": "TODO", "note": "Proxy only: FAO-IWM3-T14 value for 'Bean'." },
+      "sowingMonths": { "value": [4, 5, 8, 9], "source": "TODO" },
+      "fixesNitrogen": { "value": true, "source": "TODO" },
+      "organicMatter": { "value": 1, "source": "TODO" },
+      "erosionCover": { "value": 2, "source": "TODO" },
+      "incomeLevel": { "value": 2, "source": "TODO" }
+    },
+    {
+      "id": "crotalaria",
+      "name": "Crotalaria (green manure / cover crop)",
+      "waterNeedMm": { "value": [400, 600], "source": "TODO" },
+      "growingDays": { "value": [90, 120], "source": "TODO" },
+      "droughtSensitivity": { "value": "low-medium", "source": "TODO" },
+      "sowingMonths": { "value": [5, 6, 7], "source": "TODO" },
+      "fixesNitrogen": { "value": true, "source": "TODO" },
+      "organicMatter": { "value": 3, "source": "TODO" },
+      "erosionCover": { "value": 3, "source": "TODO" },
+      "incomeLevel": { "value": 1, "source": "TODO" }
+    }
+  ]
+}
