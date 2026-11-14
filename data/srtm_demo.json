@@ -1,0 +1,11 @@
+{
+  "_about": "Slope of the demo farm, computed once offline because the elevation API cannot be called from the browser (no CORS header). Elevations are a 3x3 grid at 1 arc-second (~30 m) spacing around the farm, rows north to south, columns west to east. Slope uses the Horn (1981) 3x3 method.",
+  "center": { "lat": 12.5615, "lon": 108.2817 },
+  "dataset": "SRTM GL1 30 m, via the OpenTopoData public API (srtm30m)",
+  "url": "https://api.opentopodata.org/v1/srtm30m",
+  "retrieved": "2026-11-14",
+  "elevationsM": [432, 432, 433, 432, 432, 433, 432, 431, 432],
+  "slopePercent": 1.7,
+  "slopeDegrees": 1.0,
+  "comment": "At 3 arc-second (~90 m) spacing the same method gives 1.0 %. A 30 m grid smooths short, steep hillsides, so the farmer can override this value with the slider."
+}

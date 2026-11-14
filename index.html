@@ -65,6 +65,17 @@
   <h2>Crop fit at this farm</h2>
   <table id="fitTable"></table>
 
+  <!-- Slope and erosion: slope × heavy-rain months from NASA POWER -->
+  <h2>Slope and erosion risk</h2>
+  <div class="row">
+    <!-- Default is the SRTM 30 m slope of the demo farm (see data/srtm_demo.json); farmers can set their own -->
+    <label>Field slope (%) <output id="slope_out">1.7</output><br><input id="slope" type="range" min="0" max="60" step="0.1" value="1.7"></label>
+  </div>
+  <!-- Filled by JavaScript with the risk level and the numbers behind it -->
+  <p id="erosionText"></p>
+  <!-- Explains where the default slope comes from and what is still future work -->
+  <p class="note">The default slope (1.7 %) is computed from SRTM 30 m elevation around the demo farm (data/srtm_demo.json). SRTM cannot be fetched live from this static page, so for other locations set the slope by hand. Live SRTM lookup for any point is future work. Heavy-rain month = 200 mm of rain or more (team assumption). Erosion index = slope % × heavy-rain months; below 20 is low, 20–60 medium, 60 or more high (team assumption). A higher index gives the erosion-control priority more weight.</p>
+
   <!-- Farmer priorities: each slider weights one goal from 0 (ignore) to 10 (most important) -->
   <h2>Your priorities</h2>
   <div class="row" id="sliders">
@@ -422,6 +433,24 @@
       return `${years.join("<br>")}<br>${why}`;
     }
 
+    // ---------- 10b. EROSION RISK FROM SLOPE AND NASA HEAVY-RAIN MONTHS ----------
+
+    // Monthly rain at or above this many mm counts as a heavy-rain month (team assumption)
+    const HEAVY_RAIN_MM = 200;
+
+    // Erosion index = slope % × number of heavy-rain months in the average year
+    function erosionRisk() {
+      const slope = Number(document.getElementById("slope").value);
+      // Turn POWER's mm/day into mm per month and keep the heavy months
+      const heavy = MONTHS.filter((_, i) => (climate.rain[i] ?? 0) * DAYS[i] >= HEAVY_RAIN_MM);
+      const index = slope * heavy.length;
+      // Thresholds 20 and 60 split the index into three plain words
+      const level = index >= 60 ? "high" : index >= 20 ? "medium" : "low";
+      // 0 on flat land, 1 at index 60 or more; used to boost the erosion priority
+      const factor = clamp(index / 60);
+      return { slope, heavy, index, level, factor };
+    }
+
     // ---------- 11. REDRAW EVERYTHING THAT DEPENDS ON CLIMATE + CROPS + SLIDERS ----------
 
     // Called after data loads and whenever a slider moves
@@ -441,15 +470,25 @@
         weights[key] = Number(document.getElementById(`w_${key}`).value);
         document.getElementById(`w_${key}_out`).textContent = weights[key];
       }
+      // Work out erosion risk and show it with the numbers behind it
+      const risk = erosionRisk();
+      document.getElementById("slope_out").textContent = risk.slope;
+      document.getElementById("erosionText").innerHTML = `Erosion risk: <b>${risk.level}</b> (index ${risk.index.toFixed(1)} = slope ${risk.slope} % × ${risk.heavy.length} heavy-rain months: ${risk.heavy.join(", ") || "none"}).`;
+      // Steeper, wetter farms weight erosion control up to 1.5×; flat farms down to 0.5×
+      const eff = { ...weights, erosion: weights.erosion * (0.5 + risk.factor) };
       // Rank all plans and show the best three with their reasons
-      const top = rankSequences(byId, weights).slice(0, 3);
+      const top = rankSequences(byId, eff).slice(0, 3);
+      // Remind the farmer why erosion control matters when the risk is not low
+      const riskNote = risk.level === "low" ? "" : ` Erosion risk on this field is ${risk.level}, so ground cover counts for more.`;
       document.getElementById("plans").innerHTML = top
-        .map(p => `<li><p><b>${p.seq.map(id => byId[id].crop.name.split(" (")[0]).join(" → ")}</b> (score ${Math.round(p.total * 100)})<br>${explain(p, byId, weights)}</p></li>`)
+        .map(p => `<li><p><b>${p.seq.map(id => byId[id].crop.name.split(" (")[0]).join(" → ")}</b> (score ${Math.round(p.total * 100)})<br>${explain(p, byId, eff)}${riskNote}</p></li>`)
         .join("");
     }
 
     // Re-rank live while the farmer drags any slider
     for (const { key } of CRITERIA) document.getElementById(`w_${key}`).addEventListener("input", updatePlans);
+    // The slope slider changes erosion risk, so it re-ranks the plans too
+    document.getElementById("slope").addEventListener("input", updatePlans);
 
     // Connect the button to the function
     document.getElementById("loadBtn").addEventListener("click", onLoadClick);
