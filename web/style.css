@@ -76,7 +76,10 @@ select { width: 100%; font: inherit; padding: 6px; margin-top: 2px; border: 1px 
   .layout { grid-template-columns: 1fr; height: auto; }
   .map-wrap { height: 60vh; }
   .panel { border-left: 0; overflow: visible; padding: 16px; }
-  .map-controls { left: 8px; right: 8px; bottom: 24px; max-width: none; font-size: 13px; }
+  /* Compact control strip so the hillside stays visible on a small screen */
+  .map-controls { left: 8px; right: 8px; bottom: 30px; max-width: none; font-size: 13px; padding: 8px 10px; }
+  .layers label { display: inline-block; margin-right: 10px; }
+  .exag { display: none; }
 }
 
 /* Respect users who ask for less motion: map fly-to is skipped in app.js too */

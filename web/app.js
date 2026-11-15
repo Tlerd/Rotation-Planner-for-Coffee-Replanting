@@ -58,12 +58,14 @@ const map = new maplibregl.Map({
         tiles: ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg"],
         attribution: "Sentinel-2 cloudless by EOX (Copernicus Sentinel data 2020) · Terrain: NASA SRTM"
       },
-      dem: { type: "raster-dem", tiles: [location.origin + "/tiles/dem/{z}/{x}/{y}.png"], encoding: "terrarium", tileSize: 256, minzoom: 8, maxzoom: 12 }
+      dem: { type: "raster-dem", tiles: [location.origin + "/tiles/dem/{z}/{x}/{y}.png"], encoding: "terrarium", tileSize: 256, minzoom: 8, maxzoom: 12 },
+      // Same tiles as a second source: MapLibre renders hillshade better when it does not share the terrain source
+      demShade: { type: "raster-dem", tiles: [location.origin + "/tiles/dem/{z}/{x}/{y}.png"], encoding: "terrarium", tileSize: 256, minzoom: 8, maxzoom: 12 }
     },
     layers: [
       { id: "s2", type: "raster", source: "s2" },
       // Hillshade makes ridges and gullies readable even when looking straight down
-      { id: "hillshade", type: "hillshade", source: "dem", paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#1f3b2d" } }
+      { id: "hillshade", type: "hillshade", source: "demShade", paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#1f3b2d" } }
     ],
     terrain: { source: "dem", exaggeration: 1.5 },
     sky: {}
