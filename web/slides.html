@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- UTF-8 for symbols like × and ° -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReRoot Demo Deck</title>
+  <!-- Same typeface as the app, so the deck and the product look like one thing -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* App palette: coffee leaf, red basalt soil, ripe cherry, mist */
+    :root { --leaf: #1f3b2d; --leaf-soft: #2f5a44; --soil: #8c3b22; --cherry: #b3122a; --mist: #eef2ee; --paper: #fbfcfa; --ink: #18221c; --muted: #56645b; --line: #d3ddd5; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #2a332d; font-family: "Be Vietnam Pro", system-ui, sans-serif; color: var(--ink); }
+
+    /* Every slide is a fixed 1280 x 720 canvas; JS scales it to the window on screen */
+    .slide { width: 1280px; height: 720px; position: relative; overflow: hidden; background: var(--paper); display: none; }
+    .slide.active { display: block; }
+    #stage { position: fixed; left: 50%; top: 50%; transform-origin: center center; }
+
+    /* Shared text scale for the deck */
+    h1 { font-size: 88px; line-height: 1; margin: 0; letter-spacing: -0.03em; }
+    h2 { font-size: 46px; line-height: 1.1; margin: 0 0 28px; color: var(--leaf); letter-spacing: -0.02em; }
+    p, li { font-size: 25px; line-height: 1.45; }
+    ul, ol { margin: 0; padding-left: 30px; }
+    li { margin-bottom: 12px; }
+    .muted { color: var(--muted); }
+    .foot { position: absolute; left: 64px; right: 64px; bottom: 26px; font-size: 16px; color: var(--muted); display: flex; justify-content: space-between; }
+
+    /* Two-column layout: text left, screenshot right */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; padding: 64px 64px 80px; height: 100%; }
+    .split.wide-img { grid-template-columns: 5fr 6fr; }
+    .shot { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; box-shadow: 0 6px 24px rgba(24, 34, 28, 0.25); }
+
+    /* Title slide: the 3D hillside is the hero, text sits on a leaf-green band */
+    /* Screenshot is 1482 px wide with the map in the left 1062 px; scaling to 1786 px puts the panel just off the slide */
+    .title-slide img { position: absolute; left: 0; top: -68px; width: 1786px; height: 857px; }
+    .title-band { position: absolute; left: 0; top: 0; bottom: 0; width: 560px; background: rgba(31, 59, 45, 0.94); color: var(--paper); padding: 72px 56px; display: flex; flex-direction: column; justify-content: space-between; }
+    .title-band h1 { color: var(--paper); }
+    .title-band .lead { font-size: 30px; line-height: 1.3; margin: 18px 0 0; }
+    .title-band p { font-size: 20px; margin: 4px 0; }
+    .title-band .soil { border-left: 5px solid #d9a07f; padding-left: 16px; }
+
+    /* Problem slide: one big statement and the rainy-season fact */
+    .big { font-size: 34px; line-height: 1.3; font-weight: 500; max-width: 1050px; }
+    .rain-bar { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; align-items: end; height: 140px; margin-top: 20px; max-width: 900px; }
+    .rain-bar div { background: var(--leaf-soft); border-radius: 3px 3px 0 0; position: relative; }
+    .rain-bar div.heavy { background: var(--soil); }
+    .rain-bar span { position: absolute; bottom: -30px; left: 0; right: 0; text-align: center; font-size: 16px; color: var(--muted); }
+
+    /* Data table on the NASA slide */
+    table { border-collapse: collapse; width: 100%; font-size: 22px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; font-size: 18px; }
+    td:first-child { font-weight: 700; color: var(--leaf); white-space: nowrap; }
+    .pair { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; height: 100%; }
+
+    /* Navigation hint on screen only */
+    #nav { position: fixed; bottom: 12px; right: 16px; color: #cfd8d1; font-size: 14px; }
+
+    /* Print / PDF: every slide on its own 1280 x 720 page, no scaling */
+    @page { size: 1280px 720px; margin: 0; }
+    @media print {
+      html, body { background: none; }
+      #stage { position: static; transform: none !important; }
+      .slide { display: block; page-break-after: always; break-after: page; }
+      #nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- 1. Title -->
+  <section class="slide title-slide">
+    <img src="slides-img/01-3d-slope.jpg" alt="3D map of Central Highlands hillsides coloured by slope">
+    <div class="title-band">
+      <div>
+        <h1>ReRoot</h1>
+        <p class="lead">Plan the years between old coffee and new coffee, with NASA data.</p>
+      </div>
+      <div class="soil">
+        <p><b>Team:</b> [TEAM NAME]</p>
+        <p><b>Members:</b> [MEMBER NAMES]</p>
+        <p>NASA Space Apps Challenge 2026</p>
+        <p>Challenge: Field Shift: Adapting Farms with NASA Data</p>
+        <p>coffee-pied-eight.vercel.app</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Problem -->
+  <section class="slide">
+    <div style="padding:64px">
+      <h2>When old coffee comes out, the hillside is bare</h2>
+      <p class="big">Coffee trees in Vietnam's Central Highlands are ageing. Farmers are advised to grow other crops for 2–3 years before replanting, so the soil can recover. Most farms are on slopes.</p>
+      <p class="muted" style="margin-top:26px">Average monthly rain at our demo farm, NASA POWER 2015–2024. Brown months have 200 mm or more, when bare soil washes away.</p>
+      <!-- Bar heights are the real monthly rain (mm) from NASA POWER for 12.5615 N, 108.2817 E -->
+      <div class="rain-bar" aria-label="Monthly rain bars">
+        <div style="height:7%"><span>Jan</span></div><div style="height:2%"><span>Feb</span></div><div style="height:5%"><span>Mar</span></div>
+        <div style="height:14%"><span>Apr</span></div><div style="height:59%"><span>May</span></div><div class="heavy" style="height:74%"><span>Jun</span></div>
+        <div class="heavy" style="height:99%"><span>Jul</span></div><div class="heavy" style="height:97%"><span>Aug</span></div><div class="heavy" style="height:100%"><span>Sep</span></div>
+        <div class="heavy" style="height:70%"><span>Oct</span></div><div style="height:52%"><span>Nov</span></div><div style="height:28%"><span>Dec</span></div>
+      </div>
+    </div>
+    <div class="foot"><span>The question: which crops, in which order, on my hillside?</span><span>2 / 7</span></div>
+  </section>
+
+  <!-- 3. User experience -->
+  <section class="slide">
+    <div class="split wide-img">
+      <div>
+        <h2>What ReRoot does</h2>
+        <ol>
+          <li>Click your hillside on a 3D map.</li>
+          <li>See the NASA data for that spot: slope, plant cover, soil moisture, rain, temperature.</li>
+          <li>Set what matters to you: soil health, erosion control, income, water risk.</li>
+          <li>Get the 3 best 2–3 year rotation plans, each with a plain-English reason.</li>
+        </ol>
+        <p class="muted">Every number shows its source. Unverified crop values are flagged.</p>
+      </div>
+      <img class="shot" src="slides-img/02-plans.jpg" alt="ReRoot panel with erosion risk and the best rotation plans" style="object-position:right top">
+    </div>
+    <div class="foot"><span>Live: coffee-pied-eight.vercel.app</span><span>3 / 7</span></div>
+  </section>
+
+  <!-- 4. NASA data -->
+  <section class="slide">
+    <div class="split wide-img">
+      <div>
+        <h2>How NASA data made it possible</h2>
+        <table>
+          <tr><th>Data</th><th>What ReRoot uses it for</th></tr>
+          <tr><td>SRTM 30 m</td><td>3D terrain, slope, erosion risk</td></tr>
+          <tr><td>SMAP L4</td><td>Root-zone and surface soil moisture (9 km)</td></tr>
+          <tr><td>MODIS NDVI</td><td>Plant cover that protects the soil (250 m)</td></tr>
+          <tr><td>NASA POWER</td><td>10 years of monthly rain, temperature, root-zone wetness</td></tr>
+          <tr><td>Sentinel-2</td><td>Partner (ESA): cloud-free base image</td></tr>
+        </table>
+      </div>
+      <div class="pair">
+        <img class="shot" src="slides-img/03-smap.jpg" alt="SMAP soil moisture layer on the 3D map">
+        <img class="shot" src="slides-img/04-ndvi.jpg" alt="MODIS NDVI plant cover layer on the 3D map">
+      </div>
+    </div>
+    <div class="foot"><span>Top: SMAP soil moisture, 31 Oct 2026. Bottom: MODIS NDVI, Oct 2026.</span><span>4 / 7</span></div>
+  </section>
+
+  <!-- 5. Method -->
+  <section class="slide">
+    <div style="padding:64px">
+      <h2>How a plan is chosen</h2>
+      <ul>
+        <li>For each crop, find the sowing month where NASA rain over the season best covers its water need (FAO values).</li>
+        <li>Build all 100 sequences of 2–3 years, never the same crop twice in a row, and score them with the farmer's priorities.</li>
+        <li>Erosion risk = slope × months with 200 mm of rain or more. A steeper, wetter field gives erosion control more weight.</li>
+        <li>Bonus for dense ground cover first and a nitrogen-fixing crop last, before coffee goes back in.</li>
+        <li>What-if: average, 30 % wetter or 30 % drier year.</li>
+      </ul>
+      <p style="margin-top:22px"><b style="color:var(--soil)">Example:</b> 25.5 % slope, 5 heavy-rain months → Crotalaria → Peanut → Crotalaria. Gentle land with income first → Peanut leads.</p>
+    </div>
+    <div class="foot"><span>Thresholds are the team's own simplifications and are shown in the app.</span><span>5 / 7</span></div>
+  </section>
+
+  <!-- 6. Build and honesty -->
+  <section class="slide">
+    <div style="padding:64px; display:grid; grid-template-columns:1fr 1fr; gap:56px">
+      <div>
+        <h2>Built to be checked</h2>
+        <ul>
+          <li>3D map (MapLibre), serverless API (Vercel), Postgres database (Neon) with 40,000 grid cells.</li>
+          <li>Python pipeline turns raw NASA files (HDF5, SRTM tiles) into map layers and the grid.</li>
+          <li>Open code: github.com/Tlerd/Rotation-Planner-for-Coffee-Replanting</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Honest limits</h2>
+        <ul>
+          <li>Some crop values are still marked TODO until verified with extension guides.</li>
+          <li>SMAP and NDVI are single dates; the detailed area is 55 × 55 km in Dak Lak.</li>
+          <li>An AI assistant helped draft code and text; the team made the decisions and checked the results.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot"><span>No NASA logos are used. Screenshots are from the live app.</span><span>6 / 7</span></div>
+  </section>
+
+  <!-- 7. Impact -->
+  <section class="slide">
+    <div class="split">
+      <div>
+        <h2>Impact and next steps</h2>
+        <ul>
+          <li>Less soil lost on slopes in the replanting years.</li>
+          <li>Richer soil when coffee goes back in.</li>
+          <li>Plans a farmer can understand and discuss with an extension worker.</li>
+        </ul>
+        <p class="muted" style="margin-top:24px"><b>Next:</b> verify crop values locally, add SMAP and NDVI time series and IMERG extreme rain, cover all coffee provinces, Vietnamese language.</p>
+        <p style="margin-top:24px; font-size:30px"><b>Try it:</b> coffee-pied-eight.vercel.app</p>
+      </div>
+      <img class="shot" src="slides-img/01-3d-slope.jpg" alt="3D slope map of the study area" style="object-position:35% center">
+    </div>
+    <div class="foot"><span>ReRoot · Field Shift · NASA Space Apps Challenge 2026</span><span>7 / 7</span></div>
+  </section>
+
+</div>
+<div id="nav">← → or click to change slide · <span id="pos"></span></div>
+<script>
+  // All slides in order; one is shown at a time on screen
+  const slides = [...document.querySelectorAll(".slide")];
+  let i = 0;
+  // Scales the 1280 x 720 canvas to fit the window without cropping
+  function fit() {
+    const s = Math.min(innerWidth / 1280, innerHeight / 720);
+    document.getElementById("stage").style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  // Shows slide n and updates the counter
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((el, k) => el.classList.toggle("active", k === i));
+    document.getElementById("pos").textContent = `${i + 1} / ${slides.length}`;
+  }
+  // Keyboard: arrows, PageUp/PageDown and space move between slides
+  addEventListener("keydown", e => {
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) show(i + 1);
+    if (["ArrowLeft", "PageUp"].includes(e.key)) show(i - 1);
+  });
+  // Click on the right half goes forward, left half goes back
+  addEventListener("click", e => show(e.clientX > innerWidth / 2 ? i + 1 : i - 1));
+  addEventListener("resize", fit);
+  fit();
+  // A link like slides.html#4 opens slide 4, handy for sharing one slide
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+</script>
+</body>
+</html>
