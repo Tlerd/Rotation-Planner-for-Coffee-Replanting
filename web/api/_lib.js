@@ -1,23 +1,24 @@
 // Shared data access for the API routes. Files starting with "_" are not exposed as routes by Vercel.
 import { readFileSync } from "node:fs";
-import path from "node:path";
 import { neon } from "@neondatabase/serverless";
 
-// The preprocessed NASA grid and crop table ship with the function (see vercel.json includeFiles)
-const DATA_DIR = path.join(process.cwd(), "data");
+// Paths relative to this file, so they work on Vercel (where the working directory differs) and locally;
+// the static new URL(...) form also lets Vercel's bundler see and ship these files
+const GRID_FILE = new URL("../data/grid.json", import.meta.url);
+const CROPS_FILE = new URL("../data/crops.json", import.meta.url);
 // Read once per cold start, then reuse across requests
 let gridCache = null;
 let cropsCache = null;
 
 // Loads the 200 x 200 grid built by tools/preprocess.py
 export function grid() {
-  if (!gridCache) gridCache = JSON.parse(readFileSync(path.join(DATA_DIR, "grid.json"), "utf8"));
+  if (!gridCache) gridCache = JSON.parse(readFileSync(GRID_FILE, "utf8"));
   return gridCache;
 }
 
 // Loads the crop table with its per-value sources
 export function crops() {
-  if (!cropsCache) cropsCache = JSON.parse(readFileSync(path.join(DATA_DIR, "crops.json"), "utf8"));
+  if (!cropsCache) cropsCache = JSON.parse(readFileSync(CROPS_FILE, "utf8"));
   return cropsCache;
 }
 
