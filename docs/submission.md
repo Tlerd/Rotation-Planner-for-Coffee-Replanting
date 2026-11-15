@@ -9,7 +9,7 @@ ReRoot: Rotation Planner for Coffee Replanting
 Coffee trees in Vietnam's Central Highlands are getting old, and farmers must pull them out and replant. Experts advise a 2–3 year rotation with other crops before replanting, so the soil can recover. Most smallholders farm on slopes, where bare soil washes away in the rainy season. ReRoot helps a farmer plan that gap. On a 3D map built from NASA SRTM elevation, the farmer clicks their hillside. ReRoot reads NASA data for that spot: slope from SRTM, plant cover from MODIS NDVI, soil moisture from SMAP, and 10 years of rain, temperature and root-zone wetness from NASA POWER. It scores five rotation crops (maize, peanut, soybean, mung bean and the green manure Crotalaria) against that climate. It then ranks every 2- and 3-year sequence with the farmer's own priorities: soil health, erosion control, income and water risk. Steep, rainy fields give erosion control more weight. The farmer gets the top three plans, each with a plain-English reason and the NASA numbers behind it.
 
 ## Project Demonstration
-TODO: link to the 30-second video or the 7-slide deck (public, no login).
+TODO: link to the 30-second video or the 7-slide deck (public, no login). Content: docs/slides.md.
 
 ## Project Link
 - App (v2, 3D map, API and database): https://coffee-pied-eight.vercel.app/
