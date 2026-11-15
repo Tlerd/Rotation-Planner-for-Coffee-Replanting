@@ -1,4 +1,6 @@
-# Space Apps 2026 submission text (draft)
+# Space Apps 2026 submission text
+
+Status: entered in the form and saved on 15 Nov 2026, 17:38 (Asia/Saigon). Not yet submitted for judging.
 
 Copy each block into the matching field of the submission form. Check every claim before you submit.
 
@@ -54,4 +56,4 @@ Coffee trees in Vietnam's Central Highlands are getting old, and farmers must pu
 - Be Vietnam Pro font (SIL Open Font License), Google Fonts
 
 ## Use of AI (for the form and the README)
-An AI assistant (Claude, Anthropic) helped draft code, data structures and text. The team chose the problem and the approach, made the design decisions, reviewed and tested all code, and checked sourced numbers against their sources. AI-assisted files are listed in the README and in the commit messages. TODO: if images in the slides or video are AI-generated, name the tool here and make sure each image has a visible watermark. No NASA logos, flags or mission identifiers are used.
+An AI assistant (Claude, Anthropic) helped draft code, data structures and text. The team chose the problem and the approach, made the design decisions, reviewed and tested all code, and checked sourced numbers against their sources. AI-assisted files are listed in the README and in the commit messages. No AI-generated images are used; all images are screenshots of the live app. No NASA logos, flags or mission identifiers are used. (Entered in the form on 15 Nov 2026, 17:38, as the last paragraph of Project Details.)
