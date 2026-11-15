@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/*.js": { "includeFiles": "data/**", "maxDuration": 30 }
+  },
+  "headers": [
+    { "source": "/tiles/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/data/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
+  ]
+}

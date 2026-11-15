@@ -53,10 +53,10 @@
   <!-- Table filled in by JavaScript -->
   <table id="climateTable"></table>
 
-  <!-- Crop table: the rotation options, filled from data/crops.json -->
+  <!-- Crop table: the rotation options, filled from web/data/crops.json -->
   <h2>Rotation crops</h2>
   <!-- Explains the yellow cells so judges know which numbers are still unverified -->
-  <p class="note">Yellow cells are placeholders marked "TODO" in data/crops.json and still need a verified source.</p>
+  <p class="note">Yellow cells are placeholders marked "TODO" in web/data/crops.json and still need a verified source.</p>
   <table id="cropTable"></table>
   <!-- List of the sources behind the non-yellow cells -->
   <ul id="cropSources" class="note"></ul>
@@ -244,12 +244,12 @@
 
     // ---------- 7. CROP TABLE ----------
 
-    // Loads data/crops.json (relative path works on GitHub Pages and a local server)
+    // Loads the shared crop file (web/data/crops.json is also used by the v2 app, so there is one source of truth)
     async function loadCrops() {
       // fetch the crop file that sits next to index.html
-      const res = await fetch("data/crops.json");
+      const res = await fetch("web/data/crops.json");
       // Stop with a clear message if the file is missing
-      if (!res.ok) throw new Error(`data/crops.json returned HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`web/data/crops.json returned HTTP ${res.status}`);
       // Parse the JSON text into an object
       return res.json();
     }

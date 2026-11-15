@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- UTF-8 so degree signs and Vietnamese place names render -->
+  <meta charset="UTF-8">
+  <!-- Scale to the phone screen; many farmers only have a phone -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReRoot 3D Planner</title>
+  <!-- Be Vietnam Pro was designed for Vietnamese text, which fits the farmers this tool is for -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- MapLibre draws the 3D terrain; pinned version so the page never changes under us -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <!-- Chart.js draws the monthly climate chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="layout">
+    <!-- The 3D map is the heart of the app: click a hillside to plan its rotation -->
+    <section class="map-wrap" aria-label="3D terrain map">
+      <div id="map"></div>
+      <!-- Layer switch and legend float on the map so the land stays in view -->
+      <div class="map-controls">
+        <fieldset class="layers">
+          <legend>Show on the land</legend>
+          <label><input type="radio" name="layer" value="slope" checked> Slope (SRTM)</label>
+          <label><input type="radio" name="layer" value="ndvi"> Plant cover (MODIS NDVI)</label>
+          <label><input type="radio" name="layer" value="smap"> Soil moisture (SMAP)</label>
+          <label><input type="radio" name="layer" value="none"> Satellite only</label>
+        </fieldset>
+        <!-- Legend text and colours are filled by app.js for the chosen layer -->
+        <div id="legend" class="legend"></div>
+        <label class="exag">Height exaggeration <output id="exagOut">1.5×</output>
+          <input id="exag" type="range" min="1" max="3" step="0.1" value="1.5">
+        </label>
+      </div>
+    </section>
+
+    <!-- Side panel: what the NASA data says about the clicked spot, and the plan -->
+    <aside class="panel">
+      <header class="brand">
+        <h1>ReRoot</h1>
+        <p>Plan the 2–3 years between pulling out old coffee and replanting. Click your hillside on the map.</p>
+      </header>
+
+      <!-- Status line for loading, errors and the store (Postgres or file) -->
+      <p id="status" class="status" role="status">Loading the study area…</p>
+
+      <section id="spot" class="block" hidden>
+        <h2>This spot</h2>
+        <p id="spotWhere" class="muted"></p>
+        <dl id="facts" class="facts"></dl>
+      </section>
+
+      <section id="climateBlock" class="block" hidden>
+        <h2>Average year, 2015–2024</h2>
+        <canvas id="climateChart" height="170" aria-label="Monthly rain and temperature"></canvas>
+        <!-- Simple what-if: how would the plan change in a wetter or drier year? -->
+        <label class="field">Rain scenario
+          <select id="scenario">
+            <option value="1">Average year (NASA POWER)</option>
+            <option value="1.3">Wet year: 30% more rain</option>
+            <option value="0.7">Dry year: 30% less rain</option>
+          </select>
+        </label>
+      </section>
+
+      <section id="planBlock" class="block" hidden>
+        <h2>What matters most to you</h2>
+        <div class="sliders">
+          <label>Soil health <output id="w_soil_out">5</output><input id="w_soil" type="range" min="0" max="10" value="5"></label>
+          <label>Erosion control <output id="w_erosion_out">5</output><input id="w_erosion" type="range" min="0" max="10" value="5"></label>
+          <label>Income <output id="w_income_out">5</output><input id="w_income" type="range" min="0" max="10" value="5"></label>
+          <label>Low water risk <output id="w_water_out">5</output><input id="w_water" type="range" min="0" max="10" value="5"></label>
+          <!-- Slope comes from SRTM for the clicked cell; the farmer can still correct it -->
+          <label>Field slope, % <output id="slope_out">–</output><input id="slope" type="range" min="0" max="60" step="0.1" value="5"></label>
+        </div>
+        <p id="erosionText" class="erosion"></p>
+        <h2>Best rotation plans</h2>
+        <ol id="plans" class="plans"></ol>
+      </section>
+
+      <details class="block about">
+        <summary>Data and method</summary>
+        <ul id="datasets" class="muted"></ul>
+        <p class="muted">Crop values marked TODO are placeholders that still need a verified source. Scoring thresholds (root-zone wetness 0.3/0.7, heavy-rain month 200 mm, erosion index 20/60), the rain scenarios and the order bonuses are the team's own simplifications, not a published method.</p>
+        <p class="muted">Satellite base map: Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2020), CC BY-NC-SA 4.0.</p>
+      </details>
+    </aside>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

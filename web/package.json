@@ -1,0 +1,10 @@
+{
+  "name": "reroot-v2",
+  "private": true,
+  "type": "module",
+  "description": "ReRoot v2: 3D terrain rotation planner with NASA data, serverless API and Postgres",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@neondatabase/serverless": "1.2.1"
+  }
+}
