@@ -11,7 +11,7 @@ Images in `docs/img/` are real screenshots of the live app, so they need no AI w
 **On the slide**
 - ReRoot
 - Plan the years between old coffee and new coffee, with NASA data
-- Team: [TEAM NAME] · Members: [MEMBER NAMES]
+- Team: bio_find · Member: Đức Anh (GitHub: Tlerd)
 - NASA Space Apps Challenge 2026 · Challenge: Field Shift: Adapting Farms with NASA Data
 - Image: `docs/img/01-3d-slope.jpg`
 - Link: coffee-pied-eight.vercel.app

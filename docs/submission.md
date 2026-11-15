@@ -11,7 +11,6 @@ Coffee trees in Vietnam's Central Highlands are getting old, and farmers must pu
 ## Project Demonstration
 - Slide deck (7 slides, opens in any browser): https://coffee-pied-eight.vercel.app/slides.html
 - Same deck as PDF: https://github.com/Tlerd/Rotation-Planner-for-Coffee-Replanting/blob/main/docs/ReRoot-slides.pdf
-- TODO: fill in team and member names on slide 1 (web/slides.html), then re-export the PDF.
 
 ## Project Link
 - App (v2, 3D map, API and database): https://coffee-pied-eight.vercel.app/
